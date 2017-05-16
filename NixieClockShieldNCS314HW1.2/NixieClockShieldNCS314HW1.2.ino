@@ -19,8 +19,9 @@ const String FirmwareVersion="010210";
 #include <TimeLib.h>
 #include <Tone.h>
 #include <EEPROM.h>
-//#include <OneWire.h>
+#include <OneWire.h>
 //#include <IRremote.h>
+#include <DallasTemperature.h>
 
 //int RECV_PIN = 4;
 //IRrecv irrecv(RECV_PIN);
@@ -39,9 +40,11 @@ const byte pinUpperDots=12; //HIGH value light a dots
 const byte pinLowerDots=8;  //HIGH value light a dots
 const word fpsLimit=16666; // 1/60*1.000.000 //limit maximum refresh rate on 60 fps
 const byte pinTemp=7;
+
 bool RTC_present;
 
-//OneWire  ds(pinTemp);
+OneWire  ds(pinTemp);
+DallasTemperature sensors(&ds);
 
 String stringToDisplay="000000";// Conten of this string will be displayed on tubes (must be 6 chars length)
 int menuPosition=0; // 0 - time
@@ -129,8 +132,8 @@ ClickButton downButton(pinDown, LOW, CLICKBTN_PULLUP);
 
 Tone tone1;
 #define isdigit(n) (n >= '0' && n <= '9')
-//char *song = "MissionImp:d=16,o=6,b=95:32d,32d#,32d,32d#,32d,32d#,32d,32d#,32d,32d,32d#,32e,32f,32f#,32g,g,8p,g,8p,a#,p,c7,p,g,8p,g,8p,f,p,f#,p,g,8p,g,8p,a#,p,c7,p,g,8p,g,8p,f,p,f#,p,a#,g,2d,32p,a#,g,2c#,32p,a#,g,2c,a#5,8c,2p,32p,a#5,g5,2f#,32p,a#5,g5,2f,32p,a#5,g5,2e,d#,8d";
-char *song = "PinkPanther:d=4,o=5,b=160:8d#,8e,2p,8f#,8g,2p,8d#,8e,16p,8f#,8g,16p,8c6,8b,16p,8d#,8e,16p,8b,2a#,2p,16a,16g,16e,16d,2e";
+char *song = "MissionImp:d=16,o=6,b=95:32d,32d#,32d,32d#,32d,32d#,32d,32d#,32d,32d,32d#,32e,32f,32f#,32g,g,8p,g,8p,a#,p,c7,p,g,8p,g,8p,f,p,f#,p,g,8p,g,8p,a#,p,c7,p,g,8p,g,8p,f,p,f#,p,a#,g,2d,32p,a#,g,2c#,32p,a#,g,2c,a#5,8c,2p,32p,a#5,g5,2f#,32p,a#5,g5,2f,32p,a#5,g5,2e,d#,8d";
+//char *song = "PinkPanther:d=4,o=5,b=160:8d#,8e,2p,8f#,8g,2p,8d#,8e,16p,8f#,8g,16p,8c6,8b,16p,8d#,8e,16p,8b,2a#,2p,16a,16g,16e,16d,2e";
 //char *song="VanessaMae:d=4,o=6,b=70:32c7,32b,16c7,32g,32p,32g,32p,32d#,32p,32d#,32p,32c,32p,32c,32p,32c7,32b,16c7,32g#,32p,32g#,32p,32f,32p,16f,32c,32p,32c,32p,32c7,32b,16c7,32g,32p,32g,32p,32d#,32p,32d#,32p,32c,32p,32c,32p,32g,32f,32d#,32d,32c,32d,32d#,32c,32d#,32f,16g,8p,16d7,32c7,32d7,32a#,32d7,32a,32d7,32g,32d7,32d7,32p,32d7,32p,32d7,32p,16d7,32c7,32d7,32a#,32d7,32a,32d7,32g,32d7,32d7,32p,32d7,32p,32d7,32p,32g,32f,32d#,32d,32c,32d,32d#,32c,32d#,32f,16c";
 //char *song="DasBoot:d=4,o=5,b=100:d#.4,8d4,8c4,8d4,8d#4,8g4,a#.4,8a4,8g4,8a4,8a#4,8d,2f.,p,f.4,8e4,8d4,8e4,8f4,8a4,c.,8b4,8a4,8b4,8c,8e,2g.,2p";
 //char *song="Scatman:d=4,o=5,b=200:8b,16b,32p,8b,16b,32p,8b,2d6,16p,16c#.6,16p.,8d6,16p,16c#6,8b,16p,8f#,2p.,16c#6,8p,16d.6,16p.,16c#6,16b,8p,8f#,2p,32p,2d6,16p,16c#6,8p,16d.6,16p.,16c#6,16a.,16p.,8e,2p.,16c#6,8p,16d.6,16p.,16c#6,16b,8p,8b,16b,32p,8b,16b,32p,8b,2d6,16p,16c#.6,16p.,8d6,16p,16c#6,8b,16p,8f#,2p.,16c#6,8p,16d.6,16p.,16c#6,16b,8p,8f#,2p,32p,2d6,16p,16c#6,8p,16d.6,16p.,16c#6,16a.,16p.,8e,2p.,16c#6,8p,16d.6,16p.,16c#6,16a,8p,8e,2p,32p,16f#.6,16p.,16b.,16p.";
@@ -159,6 +162,13 @@ int functionDownButton=0;
 int functionUpButton=0;
 bool LEDsLock=false;
 
+const char *monthName[12] = {
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+};
+
+tmElements_t tm;
+
 /*******************************************************************************************************
 Init Programm
 *******************************************************************************************************/
@@ -167,9 +177,23 @@ void setup()
   digitalWrite(DHVpin, LOW);    // off MAX1771 Driver  Hight Voltage(DHV) 110-220V
   //irrecv.enableIRIn(); // Start the receiver  
   Wire.begin();
-  //setRTCDateTime(23,40,00,25,7,15,1);
-  
+
   Serial.begin(115200);
+  sensors.begin();
+  
+  // Set RTC from compile date
+  // get the date and time the compiler was run
+  if (getDate(__DATE__) && getTime(__TIME__)) {
+    // and configure the RTC with this info
+
+    Serial.print("Compiled Time=");
+    Serial.print(__TIME__);
+    Serial.print(", Date=");
+    Serial.println(__DATE__);
+
+    // setRTCDateTime(tm.Hour,tm.Minute,tm.Second,tm.Day,tm.Month,tm.Year,1);
+  }
+  
   //Serial1.begin(9600);
   
     if (EEPROM.read(HourFormatEEPROMAddress)!=12) value[hModeValueIndex]=24; else value[hModeValueIndex]=12;
@@ -269,14 +293,26 @@ MAIN Programm
 ***************************************************************************************************************/
 void loop() {
 
+
+  // call sensors.requestTemperatures() to issue a global temperature 
+  // request to all devices on the bus
+	//  Serial.print("Requesting temperatures...");
+	//  sensors.requestTemperatures(); // Send the command to get temperatures
+	//  Serial.println("DONE");
+
+	//  Serial.print("Temperature for the device 1 (index 0) is: ");
+	//  Serial.println(sensors.getTempCByIndex(0));
+
  if (((millis()%10000)==0)&&(RTC_present)) //synchronize with RTC every 10 seconds
  {
   getRTCTime();
   setTime(RTC_hours, RTC_minutes, RTC_seconds, RTC_day, RTC_month, RTC_year);
   Serial.println("sync");
+
+	Serial.println(sensors.getTempCByIndex(0));
  }
   
-  p=playmusic(p);
+//  p=playmusic(p);
   
   if ((millis()-prevTime4FireWorks)>5)
   {
@@ -432,7 +468,8 @@ void loop() {
        checkAlarmTime();
        break;
     case DateIndex: //date mode
-      stringToDisplay=PreZero(day())+PreZero(month())+PreZero(year()%1000);
+//      stringToDisplay=PreZero(day())+PreZero(month())+PreZero(year()%1000); // Europian Style
+      stringToDisplay=PreZero(year()%1000)+PreZero(month())+PreZero(day()); // Japanese Style
       dotPattern=B01000000;//turn on lower dots
       /*digitalWrite(pinUpperDots, LOW);
       digitalWrite(pinLowerDots, HIGH);*/
@@ -1075,3 +1112,30 @@ void setLEDsFromEEPROM()
 }
 
 
+bool getTime(const char *str)
+{
+  int Hour, Min, Sec;
+
+  if (sscanf(str, "%d:%d:%d", &Hour, &Min, &Sec) != 3) return false;
+  tm.Hour = Hour;
+  tm.Minute = Min;
+  tm.Second = Sec + 11; //Add firmware sending delay 11sec
+  return true;
+}
+
+bool getDate(const char *str)
+{
+  char Month[12];
+  int Day, Year;
+  uint8_t monthIndex;
+
+  if (sscanf(str, "%s %d %d", Month, &Day, &Year) != 3) return false;
+  for (monthIndex = 0; monthIndex < 12; monthIndex++) {
+    if (strcmp(Month, monthName[monthIndex]) == 0) break;
+  }
+  if (monthIndex >= 12) return false;
+  tm.Day = Day;
+  tm.Month = monthIndex + 1;
+  tm.Year = CalendarYrToTm(Year);
+  return true;
+}
